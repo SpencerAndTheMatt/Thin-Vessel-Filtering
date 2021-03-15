@@ -9,8 +9,8 @@ function [vesselness] = filter3D(image, s, ps)
 
 %Set derivatives of all Gauss
 %[xx, xy, xz,
-% yx, yy, yz,
-% zx, zy, zz]
+% yy, yz,
+% zz]
 
 %xx, xy, xz
 gauss_xx = (2.^(1./2).*s.^4.*x.^2.*exp(-s.^2.*(x.^2./2 + y.^2./2)))./(4.*pi.^(3./2).*(s.^2).^(3./2)) - (2.^(1./2).*s.^2.*exp(-s.^2.*(x.^2./2 + y.^2./2)))./(4.*pi.^(3./2).*(s.^2).^(3./2));
@@ -25,7 +25,7 @@ gauss_yz = (2.^(1./2).*s.^4.*y.*z.*exp(-s.^2.*(x.^2./2 + y.^2./2 + z.^2./2)))./(
 gauss_zz = (2.^(1./2).*s.^4.*z.^2.*exp(-s.^2.*(x.^2./2 + y.^2./2 + z.^2./2)))./(4.*pi.^(3./2).*(s.^2).^(3./2)) - (2.^(1./2).*s.^2.*exp(-s.^2.*(x.^2./2 + y.^2./2 + z.^2./2)))./(4.*pi.^(3./2).*(s.^2).^(3./2));
 
 %Clear x y z values
-clear x y z
+clear x y z 
 
 %Find Gaussian derivatives of the image
 gamma = 1; %Frangi 1998, just under equation (3)
@@ -44,7 +44,7 @@ image_yz = convn(s^gamma*image, gauss_yz, 'same');
 image_zz = convn(s^gamma*image, gauss_zz, 'same');
 
 %Conserve memory, clear Gauss derivatives and gamma
-clear gauss_xx gauss_xy gauss_xz gauss_yy gauss_yz gauss_zz gamma
+clear gauss_xx gauss_xy gauss_xz gauss_yy gauss_yz gauss_zz gamma s
 
 %Store eigenvalues within array
 % Sort eigenvalues according to the paper
@@ -57,23 +57,21 @@ clear image_xx image_xy image_xz image_yy image_yz image_zz
 
 %Sort values according to Frangi 1998
 %Form logical array
-truthArray = eVals1 > eVals2;
+truthArray = abs(eVals1) >= abs(eVals2);
+truthArray2 = abs(eVals3) >= abs(eVals2);
 
-%Make zeros arrays to hold new data
-newArray1 = zeros(size(eVals1));
-newArray2 = zeros(size(eVals2));
-
-%Sort values based on the truthArray
-newArray1(truthArray==1) = eVals2(truthArray==1);
-newArray2(truthArray==1) = eVals1(truthArray==1);
+%Sort values using the logical arrays
+lambda1 = eVals1; lambda1(truthArray) = eVals2(truthArray);
+lambda2 = eVals2; lambda2(truthArray) = eVals1(truthArray);
+lambda3 = eVals3; lambda3(truthArray2) = eVals2(truthArray2);
 
 %Set eigenvalues to real values only
-eigs1 = real(newArray1);
-eigs2 = real(newArray2);
-eigs3 = real(eVals3);
+eigs1 = real(lambda1);
+eigs2 = real(lambda2);
+eigs3 = real(lambda3);
 
 %Clear eVals1/2/3
-clear eVals1 eVals2 eVals3 newArray1 newArray2 truthArray
+clear eVals1 eVals2 eVals3 lambda1 lambda2 lambda3 truthArray truthArray2
 
 %Compute equation 12, returning the 'second order structureness'
 S = sqrt(eigs1.^2 + eigs2.^2 + eigs3.^2);
@@ -85,20 +83,21 @@ c = max(S(:))/2;
 Rb = abs(eigs1)./(sqrt(abs(eigs2.*eigs3))); 
 Ra = abs(eigs2)./abs(eigs3);
 
+%Set values for computing equation 13
+Ra_exp = (1 - exp(-(Ra.^2)./2*alpha.^2));
+Rb_exp = exp(-(Rb.^2)./(2.*beta.^2));
+S_exp = (1 - exp(-(S.^2)/(2.*c.^2)));
+
+%Clear values used to calculate Ra_exp, Rb_exp, S_exp
+clear alpha beta c Rb Ra 
+
 %Compute equation 13
-vesselness = (1 - exp(-((Ra.^2)./2.*alpha.^2)).*(exp(-(Rb.^2)./(2.*beta.^2))).*(1-exp(-(S.^2)./(2.*c.^2))));
+vesselness = Ra_exp.*Rb_exp.*S_exp;
 vesselness(eigs2 > 0) = 0;
 vesselness(eigs3 > 0) = 0;
 vesselness(~isfinite(vesselness)) = 0;
+vesselness(isnan(vesselness)) = 0;
 end
-
-
-
-
-
-
-
-
 
 
 
