@@ -3,24 +3,17 @@ Files for my third year university project based upon thin vessel filtering. The
 
 The 2D filter is now complete and works well on test data. It struggles to work on real data, however I suspect this is due to the resolution of the images used (as they weren't official MRI scans, just screenshots of scans). I came to this conclusions as another filter also did not work on the real image.
 
-The 3D filter is mostly complete. I believe it's as fast as I can get it working. The loops have been removed, and it's fairly barebones, i.e there are no default arguments or anything, and it only returns the vesselness, nothing else. It does not yet allow you to filter those results by an amount, however this would probably be done in the script calling this function anyway.
+*Big update*
+The filter is complete, and can be seen in Filter3D.m
 
-Note: The file 'new_file_second_differential.m' is no longer in use.
+This filter works extremely effectively upon MRI data, and also the test data found in 'test3Dfilter7' and 'test3Dfilter8'
 
-Completed tasks:
-- Second differentials of Gaussians with respect to dx^2, dy^2 and dxdy are plotted.
-- Gaussians are convoluted with a fake image consisting of 5 columns of ones down the middle, a 5 x 5 square of ones in the corner, and zeros elsewhere.
-- Eigenvalues are computed using the Hessian Matrix.
-- Filter equation is complete and ready to be used.
-- Scale factor is not working, this must be fixed. FIXED
-- Eigenvalue filtering equation does not appear to be filtering. Suspect it is a problem with the scale factor. FIXED
-- Tested on test image, successful
-- Tested on real image, not ideal results
--
-
-Current tasks:
-- Compute Dice score of 3D filter
-- Test on cluster data
-- See if the algorithm can be optimised (Currently I think it's as good as it's going to get).
+Some changes made from the last iteration
+- Sorting algorithm now used a logical index sort, i.e [~, I] = sort('abs', [], 4) which then uses this to sort the eigenvalues
+- A new constraint was added, namely if ev1/ev2 < 0.25, vesselness = 0. This distinguishes between a plate/vessel structure.
+- Memory usage is extremely high (at least ~ 80gb for an MRI image). Due to the nature of MRI data, I don't think this is to be avoided.
+- The dice scores and SNR is useful, however it was found that the dice score probability was meaningless when applied to MRI data.
 
 
+Summation:
+Filter3D.m is a matlab file which takes a 3 dimensional array, and computes likelihood of vesselness at every point within the image at a single scale factor. It uses Hessian based eigenvalue decomposition for this task. To make it multiscale, see example in the test3Dfilter files, but essentially make an array to store data, call a loop at different scale factors, then compute the maximum of all values within the holder array via the fourth dimension.
