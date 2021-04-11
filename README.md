@@ -17,3 +17,6 @@ Some changes made from the last iteration
 
 Summation:
 Filter3D.m is a matlab file which takes a 3 dimensional array, and computes likelihood of vesselness at every point within the image at a single scale factor. It uses Hessian based eigenvalue decomposition for this task. To make it multiscale, see example in the test3Dfilter files, but essentially make an array to store data, call a loop at different scale factors, then compute the maximum of all values within the holder array via the fourth dimension.
+
+*Note*
+The filter will cut out vessels at intersections (As seen on test files). This is just filter behaviour. It is expected, and due to the nature of how the filter works, it cannot be helped. Essentially, 3 crossed vessels do not look like a vessel at the intersection.
